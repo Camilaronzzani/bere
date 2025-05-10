@@ -2,9 +2,14 @@
 #include <string.h>
 #include <locale.h>
 #include <time.h>
+#include <stdlib.h>
 
 #define MAX_PRODUTOS 5
 #define MAX_NOME 50
+#define nome_arquivo "dados.txt"
+#define tamanho_buffer 100
+
+// melhorias em geral fazer sangraria
 
 typedef struct
 {
@@ -18,11 +23,15 @@ Produto limpeza[MAX_PRODUTOS];
 Produto alimentos[MAX_PRODUTOS];
 Produto padaria[MAX_PRODUTOS];
 
-int caixaAberto = 0;
+int caixaAberto = 0, idGlobal = 1, contadorLimpeza = 0, contadorAlimentos = 0, contadorPadaria = 0;
 float fundoDeCaixa = 0;
 float totalVendas = 0;
-int idGlobal = 1;
 
+// melhorias que precisa:
+// fazer funcao salvarproduto arquivo
+// fazer funcao de editar estoque na saido do protudo(editar arquivo)-- mais complexo
+
+// funcao suave
 void pega_hora_atual()
 {
     time_t agora;
@@ -33,45 +42,178 @@ void pega_hora_atual()
 
     printf("\n===========================================\n");
     if (hora >= 5 && hora < 12)
-    {
-        printf("Bom dia Dona Berê, Bem-vindo ao Mercadinho!");
-    }
+        printf("Bom dia Dona Berê, Bem-vindo ao Mercadinho! ☀️\n");
     else if (hora >= 12 && hora < 18)
+        printf("Boa tarde Dona Berê, Bem-vindo ao Mercadinho! 🌤️\n");
+    else
+        printf("Boa noite Dona Berê, Bem-vindo ao Mercadinho! 🌙\n");
+}
+
+// funcao suave
+//  melhorias feitas: adicionado if de verificao de caixa aberto para o submenu
+void exibirMenu()
+{
+    printf("\n============================================\n");
+    printf("           MENU MERCADINHO 🛍️              \n");
+    printf("============================================\n");
+    if (caixaAberto == 0)
     {
-        printf("Boa tarde  Dona Berê, Bem-vindo ao Mercadinho!");
+        printf("1. Abrir Caixa 💵\n");
+        printf("2. Sair 🚪\n");
     }
     else
     {
-        printf("Boa noite Dona Berê, Bem-vindo ao Mercadinho!");
+        printf("1. Cadastrar Produto 📝\n");
+        printf("2. Exibir Produtos 📦\n");
+        printf("3. Realizar Compra 🛒\n");
+        printf("4. Realizar Pagamento 💳\n");
+        printf("5. Fechar Caixa 🧾\n");
+        printf("6. Sair 🚪\n");
+    }
+
+    printf("============================================\n");
+    printf("Escolha uma opção: ");
+}
+
+// funcao suave
+void abrirCaixa()
+{
+    if (caixaAberto)
+    {
+        printf("\n");
+    }
+    else
+    {
+        do
+        {
+            system("clear");
+            printf("\nDigite o valor inicial do caixa: R$");
+            scanf("%f", &fundoDeCaixa);
+            getchar();
+            if (fundoDeCaixa <= 0)
+            {
+                printf("Valor inválido! Digite um valor positivo.\n");
+            }
+        } while (fundoDeCaixa <= 0);
+
+        caixaAberto = 1;
+        totalVendas = 0;
+        printf("Caixa aberto com sucesso!\n");
     }
 }
 
+// exeluido funcao de deseija continuar e colocado dentro da funcao cadastrarProduto, pois nao é usado mais nem umlugar
+
+// melhorias que precisa nao aceitar letras
+// arrumado maizomenos ele nao aceita porem sai tudo
+void cadastrarCategoria(int *contadorLimpeza, int *contadorAlimentos, int *contadorPadaria)
+{
+    int categoria, continuar;
+    do
+    {
+        system("clear");
+        printf("\n===============================\n");
+        printf("      Cadastro de Produto\n");
+        printf("===============================");
+        printf("\nEscolha a categoria do produto:\n");
+        printf("1. Material de Limpeza\n");
+        printf("2. Venda de Alimentos\n");
+        printf("3. Padaria\n");
+        printf("4. Voltar ao menu\n");
+        printf("Categoria: ");
+        if (scanf("%d", &categoria) != 1)
+        {
+            printf("Entrada inválida! Digite um número.\n");
+            while (getchar() != '\n')
+                ;   // limpa buffer
+            return; // volta ao início do loop
+        }
+
+        switch (categoria)
+        {
+        case 1:
+            cadastrarProduto(limpeza, contadorLimpeza);
+            break;
+        case 2:
+            cadastrarProduto(alimentos, contadorAlimentos);
+            break;
+        case 3:
+            cadastrarProduto(padaria, contadorPadaria);
+            break;
+        case 4:
+            return;
+        }
+
+    } while (continuar || categoria == 1 && categoria == 2 && categoria == 3);
+}
+
+// funcao suave amemmmmmmmmmmmm
+//  melhorias que precisa: salvar no arquivo
 void cadastrarProduto(Produto categoria[], int *contador)
 {
+    char escolha;
+    int continuar;
+
+    FILE *arquivo;
+    arquivo = fopen(nome_arquivo, "a");
+    if (arquivo == NULL)
+    {
+        perror("Erro ao abrir o arquivo para escrita");
+        return;
+    }
+
+    printf("Programa para gravar dados em arquivo.\n");
+
     if (*contador >= MAX_PRODUTOS)
     {
         printf("Limite de produtos atingido!\n\n");
+        fclose(arquivo);
         return;
     }
 
     printf("\nID do produto: %d\n", idGlobal);
-    categoria[*contador].id = idGlobal++;
+    categoria[*contador].id = idGlobal;
+    getchar();
 
     printf("Nome do produto: ");
-    getchar();
     fgets(categoria[*contador].nome, MAX_NOME, stdin);
     categoria[*contador].nome[strcspn(categoria[*contador].nome, "\n")] = '\0';
 
     printf("Preço: R$");
     scanf("%f", &categoria[*contador].preco);
+    getchar();
 
     printf("Quantidade: ");
     scanf("%d", &categoria[*contador].quantidade);
+    getchar();
+
+    fprintf(arquivo, "ID: %d; Produto: %s; Preço: %.2f; Quantidade: %d\n",
+            categoria[*contador].id,
+            categoria[*contador].nome,
+            categoria[*contador].preco,
+            categoria[*contador].quantidade);
+
+    fclose(arquivo);
+    printf("Dados gravados com sucesso no arquivo '%s'.\n", nome_arquivo);
 
     (*contador)++;
-    printf("\nProduto cadastrado com sucesso!\n\n");
+    idGlobal++;
+
+    printf("\nDeseja cadastrar outro produto? (S/N): ");
+    scanf(" %c", &escolha);
+    getchar();
+    continuar = (escolha == 'S' || escolha == 's') ? 1 : 0;
+
+    if (continuar == 1)
+        cadastrarProduto(categoria, contador);
+
+    system("clear");
+    printf("\nProduto cadastrado com sucesso!\n");
 }
 
+//----------- NAO AJUSTADO -------------------
+
+//  melhorias que precisa: pegar diretamente do arquivo
 void exibirProdutos(Produto categoria[], int contador, char *titulo)
 {
     int i;
@@ -99,6 +241,8 @@ void exibirProdutos(Produto categoria[], int contador, char *titulo)
                categoria[i].preco, estoque_msg);
     }
 }
+
+// melhorias q precisa:
 void realizarPagamento(float totalLimpeza, float totalAlimentos, float totalPadaria)
 {
     float totalGeral = totalLimpeza + totalAlimentos + totalPadaria;
@@ -183,22 +327,7 @@ void realizarPagamento(float totalLimpeza, float totalAlimentos, float totalPada
     }
 }
 
-void exibirMenu()
-{
-    printf("\n============================================\n");
-    printf("           MENU MERCADINHO                  \n");
-    printf("============================================\n");
-    printf("1. Abrir Caixa\n");
-    printf("2. Cadastrar Produto\n");
-    printf("3. Exibir Produtos\n");
-    printf("4. Realizar Compra\n");
-    printf("5. Realizar Pagamento\n");
-    printf("6. Fechar Caixa\n");
-    printf("7. Sair\n");
-    printf("============================================\n");
-    printf("Escolha uma opção: ");
-}
-
+// melhorias que precisa: pegar do arquivo e exibir os produtos no estoque
 void comprarProduto(Produto categoria[], int quantidadeProdutos, float *total)
 {
     int idBuscado, quantidade;
@@ -227,32 +356,7 @@ void comprarProduto(Produto categoria[], int quantidadeProdutos, float *total)
     printf("Produto com ID %d não encontrado!\n", idBuscado);
 }
 
-
-void abrirCaixa()
-{
-    if (caixaAberto)
-    {
-        printf("\nO caixa já está aberto!\n");
-    }
-    else
-    {
-        do
-        {
-            system("clear");
-            printf("\nDigite o valor inicial do caixa: R$");
-            scanf("%f", &fundoDeCaixa);
-            if (fundoDeCaixa <= 0)
-            {
-                printf("Valor inválido! Digite um valor positivo.\n");
-            }
-        } while (fundoDeCaixa <= 0);
-
-        caixaAberto = 1;
-        totalVendas = 0;
-        printf("Caixa aberto com sucesso!\n");
-    }
-}
-
+// melhorias que precisa:
 int verificarEstoque(Produto p, int quantidade)
 {
     if (p.quantidade == 0)
@@ -268,6 +372,7 @@ int verificarEstoque(Produto p, int quantidade)
     return 1;
 }
 
+// funcao suave
 void fecharCaixa(float totalLimpeza, float totalAlimentos, float totalPadaria)
 {
     if (!caixaAberto)
@@ -290,63 +395,24 @@ void fecharCaixa(float totalLimpeza, float totalAlimentos, float totalPadaria)
     }
 }
 
-void continuarCadastro(int *desejaContinuar)
-{
-    char escolha;
-    printf("\nDeseja cadastrar outro produto? (S/N): ");
-    scanf(" %c", &escolha);
-    *desejaContinuar = (escolha == 'S' || escolha == 's') ? 1 : 0;
-}
-
-void cadastrarCategoria(int *contadorLimpeza, int *contadorAlimentos, int *contadorPadaria)
-{
-    int categoria, desejaContinuar;
-    do
-    {
-        system("clear");
-        printf("\nEscolha a categoria do produto:\n");
-        printf("1. Material de Limpeza\n");
-        printf("2. Venda de Alimentos\n");
-        printf("3. Padaria\n");
-        printf("5. Voltar ao menu\n");
-        printf("Categoria: ");
-        scanf("%d", &categoria);
-
-        switch (categoria)
-        {
-        case 1:
-            cadastrarProduto(limpeza, contadorLimpeza);
-            break;
-        case 2:
-            cadastrarProduto(alimentos, contadorAlimentos);
-            break;
-        case 3:
-            cadastrarProduto(padaria, contadorPadaria);
-            break;
-        case 5:
-            return;
-        default:
-            printf("Categoria inválida!\n");
-        }
-        continuarCadastro(&desejaContinuar);
-    } while (desejaContinuar);
-}
-
+// melhorias que foi feita: foi implementado o submenu e arrumado erro de aceitar letras e while melhorado
 int main()
 {
-    int opcao, categoriaCompra;
-    int contadorLimpeza = 0, contadorAlimentos = 0, contadorPadaria = 0;
+    int opcao, categoriaCompra, opcaoSub, sair;
     float totalLimpeza = 0, totalAlimentos = 0, totalPadaria = 0;
-
     setlocale(LC_ALL, "Portuguese_Brazil");
-    pega_hora_atual();
 
+    pega_hora_atual();
     do
     {
-        exibirMenu();
-        scanf("%d", &opcao);
+        if (caixaAberto == 0)
+        {
+            exibirMenu();
+            scanf("%d", &opcao);
+            getchar();
+        }
 
-        if (opcao == 7)
+        if (opcao == 2)
         {
             if (caixaAberto)
             {
@@ -356,32 +422,29 @@ int main()
             else
             {
                 system("clear");
+                sair = 1;
                 printf("Saindo do sistema...\n Até Mais!\n");
                 break;
             }
         }
+        else if (opcao == 1)
+        {
+            abrirCaixa();
 
-        if (!caixaAberto && opcao != 1 && opcao != 6)
-        {
-            system("clear");
-            printf("\nO caixa precisa estar aberto para essa operação!\n");
-        }
-        else
-        {
-            switch (opcao)
+            exibirMenu();
+            scanf("%d", &opcaoSub);
+            getchar();
+            switch (opcaoSub)
             {
             case 1:
-                abrirCaixa();
-                break;
-            case 2:
                 cadastrarCategoria(&contadorLimpeza, &contadorAlimentos, &contadorPadaria);
                 break;
-            case 3:
+            case 2:
                 exibirProdutos(limpeza, contadorLimpeza, "Material de Limpeza");
                 exibirProdutos(alimentos, contadorAlimentos, "Venda de Alimentos");
                 exibirProdutos(padaria, contadorPadaria, "Padaria");
                 break;
-            case 4:
+            case 3:
                 printf("\nEscolha a categoria:\n");
                 printf("1. Material de Limpeza\n");
                 printf("2. Venda de Alimentos\n");
@@ -403,18 +466,28 @@ int main()
                     printf("Categoria inválida!\n");
                 }
                 break;
-            case 5:
+            case 4:
                 realizarPagamento(totalLimpeza, totalAlimentos, totalPadaria);
                 break;
-            case 6:
+            case 5:
                 fecharCaixa(totalLimpeza, totalAlimentos, totalPadaria);
+                break;
+            case 6:
+                system("clear");
+                sair = 1;
+                printf("Saindo do sistema...\n Até Mais!\n");
                 break;
             default:
                 system("clear");
                 printf("Opção inválida!\n");
+                break;
             }
         }
-    } while (1);
+        else if (opcao != 1)
+        {
+            printf("operacao invalida");
+        }
+    } while (sair != 1);
 
     return 0;
 }
