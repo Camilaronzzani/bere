@@ -3,6 +3,7 @@
 #include <locale.h>
 #include <time.h>
 #include <stdlib.h>
+#include <ctype.h> // add p converter letra min e maiusc, vice versa
 
 #define MAX_PRODUTOS 5
 #define MAX_NOME 50
@@ -23,6 +24,65 @@ Produto padaria[MAX_PRODUTOS];
 int caixaAberto = 0, idGlobal = 1, contadorLimpeza = 0, contadorAlimentos = 0, contadorPadaria = 0;
 float fundoDeCaixa = 0;
 float totalVendas = 0;
+
+// funçao para realizar sangria
+
+void realizarSangria() {
+    if (!caixaAberto) {
+        printf("\nOperação não permitida: Caixa fechado!\n");
+        printf("Por favor, abra o caixa primeiro.\n");
+        return;
+    }
+
+    float valor;
+    printf("\n========== SANGRIA DE CAIXA ==========\n");
+    printf("Saldo total disponível: R$%.2f\n", fundoDeCaixa + totalVendas);
+    
+    //  valida o valor 
+    int tentativas = 0;
+    while (tentativas < 3) {
+        printf("\nDigite o valor a ser retirado: R$");
+        
+        if (scanf("%f", &valor) != 1) {
+            printf("Valor inválido! Digite apenas números.\n");
+            while (getchar() != '\n');
+            tentativas++;
+            continue;
+        }
+        getchar();
+
+        if (valor <= 0) {
+            printf("Valor deve ser positivo!\n");
+            tentativas++;
+            continue;
+        }
+
+        if (valor > (fundoDeCaixa + totalVendas)) {
+            printf("Saldo insuficiente! Saldo atual: R$%.2f\n", fundoDeCaixa + totalVendas);
+            return;
+        }
+        break;
+    }
+
+    if (tentativas >= 3) {
+        printf("Número máximo de tentativas excedido.\n");
+        return;
+    }
+
+    if (valor <= fundoDeCaixa) {
+        fundoDeCaixa -= valor;
+    } else {
+        float diferenca = valor - fundoDeCaixa;
+        fundoDeCaixa = 0;
+        totalVendas -= diferenca;
+    }
+
+    // confirma a operaçao
+    printf("\nSangria realizada com sucesso!\n");
+    printf("Valor retirado: R$%.2f\n", valor);
+    printf("Novo saldo disponível: R$%.2f\n", fundoDeCaixa + totalVendas);
+    printf("=================================\n");
+}
 
 void pega_hora_atual() {
     time_t agora;
@@ -53,8 +113,9 @@ void exibirMenu() {
         printf("2. Exibir Produtos 📦\n");
         printf("3. Realizar Compra 🛒\n");
         printf("4. Realizar Pagamento 💳\n");
-        printf("5. Fechar Caixa 🧾\n");
-        printf("6. Sair 🚪\n");
+        printf("5. Realizar Sangria 💸\n"); // opcao add
+        printf("6. Fechar Caixa 🧾\n");
+        printf("7. Sair 🚪\n"); // ajuste de numero
     }
     printf("============================================\n");
     printf("Escolha uma opção: ");
@@ -62,29 +123,35 @@ void exibirMenu() {
 
 void abrirCaixa() {
     if (caixaAberto) {
-        printf("\n");
+        printf("\nO caixa já está aberto!\n");
+        return;
     }
-    else {
-        do {
-            system("clear || cls");
-            printf("\nDigite o valor inicial do caixa: R$");
-            if (scanf("%f", &fundoDeCaixa) != 1) {
-                printf("Valor inválido! Digite um número.\n");
-                while (getchar() != '\n');
-                continue;
-            }
-            getchar();
-            if (fundoDeCaixa <= 0) {
-                printf("Valor inválido! Digite um valor positivo.\n");
-            }
-        } while (fundoDeCaixa <= 0);
 
-        caixaAberto = 1;
-        totalVendas = 0;
-        printf("Caixa aberto com sucesso!\n");
-    }
+    do {
+        system("clear || cls");
+        printf("\nDigite o valor inicial do caixa: R$");
+        
+        if (scanf("%f", &fundoDeCaixa) != 1) {
+            printf("Valor inválido! Digite apenas números.\n");
+            while (getchar() != '\n');
+            continue;
+        }
+        getchar();
+
+        if (fundoDeCaixa <= 0) {
+            printf("Valor deve ser positivo!\n");
+            continue;
+        }
+
+        break;
+    } while (1);
+
+    caixaAberto = 1;
+    totalVendas = 0;
+    printf("\nCaixa aberto com sucesso com R$%.2f\n", fundoDeCaixa);
 }
 
+// validaçao do s e n  
 void cadastrarProduto(Produto categoria[], int *contador) {
     char escolha;
     int continuar;
@@ -111,17 +178,11 @@ void cadastrarProduto(Produto categoria[], int *contador) {
     categoria[*contador].nome[strcspn(categoria[*contador].nome, "\n")] = '\0';
 
     printf("Preço: R$");
-    while (scanf("%f", &categoria[*contador].preco) != 1 || categoria[*contador].preco <= 0) {
-        printf("Preço inválido! Digite um valor positivo: R$");
-        while (getchar() != '\n');
-    }
+    scanf("%f", &categoria[*contador].preco);
     getchar();
 
     printf("Quantidade: ");
-    while (scanf("%d", &categoria[*contador].quantidade) != 1 || categoria[*contador].quantidade < 0) {
-        printf("Quantidade inválida! Digite um número positivo: ");
-        while (getchar() != '\n');
-    }
+    scanf("%d", &categoria[*contador].quantidade);
     getchar();
 
     fprintf(arquivo, "ID: %d; Produto: %s; Preço: %.2f; Quantidade: %d\n",
@@ -135,19 +196,33 @@ void cadastrarProduto(Produto categoria[], int *contador) {
 
     (*contador)++;
     idGlobal++;
+    int tentativas = 0;
+    do {
+        printf("\nDeseja cadastrar outro produto? (S/N): ");
+        scanf(" %c", &escolha);
+        getchar();
+        escolha = toupper(escolha);
+        
+        if (escolha != 'S' && escolha != 'N') {
+            printf("Opção inválida! Digite apenas S (Sim) ou N (Não).\n");
+            tentativas++;
+            if (tentativas >= 3) {
+                printf("Número máximo de tentativas excedido.\n");
+                escolha = 'N'; // forçando sair dps de muitas tentativas
+                break;
+            }
+        }
+    } while (escolha != 'S' && escolha != 'N');
 
-//fazer a conferencia para não deixar digitar numero inves de letra
+    continuar = (escolha == 'S') ? 1 : 0;
 
-    printf("\nDeseja cadastrar outro produto? (S/N): ");
-    scanf(" %c", &escolha);
-    getchar();
-    continuar = (escolha == 'S' || escolha == 's') ? 1 : 0;
-
-    if (continuar == 1)
+    if (continuar == 1) {
+        system("clear || cls");
         cadastrarProduto(categoria, contador);
+    }
 
     system("clear || cls");
-    printf("\nProduto cadastrado com sucesso!\n");
+    printf("\nOperação de cadastro concluída.\n");
 }
 
 void cadastrarCategoria(int *contadorLimpeza, int *contadorAlimentos, int *contadorPadaria) {
@@ -250,7 +325,7 @@ void realizarPagamento(float totalLimpeza, float totalAlimentos, float totalPada
     float totalGeral = totalLimpeza + totalAlimentos + totalPadaria;
 
     if (totalGeral == 0) {
-        printf("\nNenhum produto foi selecionado para compra!\n");
+        printf("\nNenhum produto selecionado para compra!\n");
         return;
     }
 
@@ -404,10 +479,10 @@ int main() {
                 getchar();
 
                 switch (opcaoSub) {
-                    case 1:
-                        cadastrarCategoria(&contadorLimpeza, &contadorAlimentos, &contadorPadaria);
+                    case 1: 
+                        cadastrarCategoria(&contadorLimpeza, &contadorAlimentos, &contadorPadaria); 
                         break;
-                    case 2:
+                    case 2: 
                         exibirProdutos(limpeza, contadorLimpeza, "Material de Limpeza");
                         exibirProdutos(alimentos, contadorAlimentos, "Venda de Alimentos");
                         exibirProdutos(padaria, contadorPadaria, "Padaria");
@@ -424,26 +499,22 @@ int main() {
                             break;
                         }
                         switch (categoriaCompra) {
-                            case 1:
-                                comprarProduto(limpeza, contadorLimpeza, &totalLimpeza);
-                                break;
-                            case 2:
-                                comprarProduto(alimentos, contadorAlimentos, &totalAlimentos);
-                                break;
-                            case 3:
-                                comprarProduto(padaria, contadorPadaria, &totalPadaria);
-                                break;
-                            default:
-                                printf("Categoria inválida!\n");
+                            case 1: comprarProduto(limpeza, contadorLimpeza, &totalLimpeza); break;
+                            case 2: comprarProduto(alimentos, contadorAlimentos, &totalAlimentos); break;
+                            case 3: comprarProduto(padaria, contadorPadaria, &totalPadaria); break;
+                            default: printf("Categoria inválida!\n");
                         }
                         break;
-                    case 4:
-                        realizarPagamento(totalLimpeza, totalAlimentos, totalPadaria);
+                    case 4: 
+                        realizarPagamento(totalLimpeza, totalAlimentos, totalPadaria); 
                         break;
-                    case 5:
-                        fecharCaixa(totalLimpeza, totalAlimentos, totalPadaria);
+                    case 5:  // opcao de sangria
+                        realizarSangria();
                         break;
-                    case 6:
+                    case 6: 
+                        fecharCaixa(totalLimpeza, totalAlimentos, totalPadaria); 
+                        break;
+                    case 7:
                         system("clear || cls");
                         sair = 1;
                         printf("Saindo do sistema...\n Até Mais!\n");
@@ -453,7 +524,7 @@ int main() {
                         printf("Opção inválida!\n");
                         break;
                 }
-            } while (opcaoSub != 6 && !sair);
+            } while (opcaoSub != 7 && !sair);
         }
         else if (opcao != 1) {
             printf("Operação inválida!\n");
