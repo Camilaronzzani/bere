@@ -136,6 +136,8 @@ void cadastrarProduto(Produto categoria[], int *contador) {
     (*contador)++;
     idGlobal++;
 
+//fazer a conferencia para não deixar digitar numero inves de letra
+
     printf("\nDeseja cadastrar outro produto? (S/N): ");
     scanf(" %c", &escolha);
     getchar();
