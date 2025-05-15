@@ -7,8 +7,10 @@
 
 #define MAX_PRODUTOS 5
 #define MAX_NOME 50
-#define nome_arquivo "dados.txt"
 #define tamanho_buffer 100
+#define ARQUIVO_LIMPEZA "limpeza.txt"
+#define ARQUIVO_ALIMENTOS "alimentos.txt"
+#define ARQUIVO_PADARIA "padaria.txt"
 
 typedef struct
 {
@@ -26,9 +28,6 @@ int caixaAberto = 0, idGlobal = 1, contadorLimpeza = 0, contadorAlimentos = 0, c
 float fundoDeCaixa = 0;
 float totalVendas = 0;
 FILE *arquivo;
-
-// fazer funcao salvarproduto arquivo
-// fazer funcao de editar estoque na saido do protudo(editar arquivo)-- mais complexo
 
 void pega_hora_atual()
 {
@@ -98,7 +97,7 @@ void abrirCaixa()
     }
 }
 
-void cadastrarCategoria(int *contadorLimpeza, int *contadorAlimentos, int *contadorPadaria)
+void cadastrarCategoria()
 {
     int categoria, continuar;
     do
@@ -124,140 +123,95 @@ void cadastrarCategoria(int *contadorLimpeza, int *contadorAlimentos, int *conta
         switch (categoria)
         {
         case 1:
-            cadastrarProduto(limpeza, contadorLimpeza);
+            cadastrarProduto(limpeza, &contadorLimpeza, ARQUIVO_LIMPEZA);
             break;
         case 2:
-            cadastrarProduto(alimentos, contadorAlimentos);
+            cadastrarProduto(alimentos, &contadorAlimentos, ARQUIVO_ALIMENTOS);
             break;
         case 3:
-            cadastrarProduto(padaria, contadorPadaria);
+            cadastrarProduto(padaria, &contadorPadaria, ARQUIVO_PADARIA);
             break;
         case 4:
             return;
         default:
-            printf("Opção inválida!\n");
+            printf("Opcao invalida!\n");
         }
     } while (categoria != 4);
 }
 
-void cadastrarProduto(Produto categoria[], int *contador)
+void cadastrarProduto(Produto categoria[], int *contador, const char *nomeArquivo)
 {
-    char escolha;
-    int continuar;
-
-    arquivo = fopen(nome_arquivo, "w");
-    if (arquivo == NULL)
-    {
-        perror("Erro ao abrir o arquivo para escrita");
-        return;
-    }
-
-    printf("Programa para gravar dados em arquivo.\n");
-
     if (*contador >= MAX_PRODUTOS)
     {
-        printf("Limite de produtos atingido!\n\n");
-        fclose(arquivo);
+        printf("Limite de produtos atingido!\n");
         return;
     }
 
-    printf("\nID do produto: %d\n", idGlobal);
-    categoria[*contador].id = idGlobal;
+    Produto p;
+    p.id = idGlobal++;
+    printf("ID: %d \n", idGlobal);
     getchar();
 
     printf("Nome do produto: ");
-    fgets(categoria[*contador].nome, MAX_NOME, stdin);
-    categoria[*contador].nome[strcspn(categoria[*contador].nome, "\n")] = '\0';
-    if (strlen(categoria[*contador].nome) <= 2)
+    fgets(p.nome, MAX_NOME, stdin);
+    p.nome[strcspn(p.nome, "\n")] = '\0';
+    if (strlen(p.nome) <= 2)
     {
-        printf("Vazio");
-        getchar();
+        printf("Vazio\n");
         return;
     }
 
     printf("Preço: R$");
-    while (scanf("%f", &categoria[*contador].preco) != 1 || categoria[*contador].preco <= 0)
+    while (scanf("%f", &p.preco) != 1 || p.preco <= 0)
     {
-        printf("Preço inválido! Digite um valor positivo: R$");
+        printf("Invalido. Preco positivo: R$");
         while (getchar() != '\n')
             ;
     }
-    getchar();
 
     printf("Quantidade: ");
-    while (scanf("%d", &categoria[*contador].quantidade) != 1 || categoria[*contador].quantidade < 0)
+    while (scanf("%d", &p.quantidade) != 1 || p.quantidade < 0)
     {
-        printf("Quantidade inválida! Digite um número positivo: ");
+        printf("Invalido. Quantidade positiva: ");
         while (getchar() != '\n')
             ;
     }
-    getchar();
 
-    fprintf(arquivo, "ID: %d| Produto: %s| Preço: %.2f| Quantidade: %d\n",
-            categoria[*contador].id,
-            categoria[*contador].nome,
-            categoria[*contador].preco,
-            categoria[*contador].quantidade);
-
-    fclose(arquivo);
-    printf("Dados gravados com sucesso no arquivo '%s'.\n", nome_arquivo);
-
+    categoria[*contador] = p;
     (*contador)++;
-    idGlobal++;
 
-    printf("\nDeseja cadastrar outro produto? (S/N): ");
-    scanf(" %c", &escolha);
-    getchar();
-    continuar = (escolha == 'S' || escolha == 's') ? 1 : 0;
+    FILE *arquivo = fopen(nomeArquivo, "a");
+    if (!arquivo)
+    {
+        perror("Erro ao abrir arquivo para salvar produto");
+        return;
+    }
+    fprintf(arquivo, "%d;%s;%.2f;%d\n", p.id, p.nome, p.preco, p.quantidade);
+    fclose(arquivo);
 
-    if (continuar == 1)
-        cadastrarProduto(categoria, contador);
-
-    system("clear");
     printf("\nProduto cadastrado com sucesso!");
 }
 
-//  melhorias que precisa: pegar diretamente do arquivo
-void exibirProdutos(Produto categoria[], int contador, char *titulo)
+void exibirProdutos(const char *nomeArquivo, const char *titulo)
 {
-    arquivo = fopen(nome_arquivo, "r");
-    if (arquivo == NULL)
+    FILE *arquivo = fopen(nomeArquivo, "r");
+    if (!arquivo)
     {
-        perror("Erro ao abrir o arquivo para leitura");
-        return 1;
-    }
-
-    printf("Programa para ler dados do arquivo '%s'.\n", nome_arquivo);
-    printf("--- Conteúdo do arquivo ---\n");
-
-    //falta pegar do arquivo
-    int i;
-    printf("\n===== %s =====\n", titulo);
-    if (contador == 0)
-    {
-        printf("Nenhum produto cadastrado.\n");
+        perror("Erro ao abrir arquivo");
         return;
     }
-
-    for (i = 0; i < contador; i++)
+    Produto p;
+    printf("\n===== %s =====\n", titulo);
+    while (fscanf(arquivo, "%d;%49[^;];%f;%d\n", &p.id, p.nome, &p.preco, &p.quantidade) == 4)
     {
-        char estoque_msg[20];
-        if (categoria[i].quantidade == 0)
-        {
-            strcpy(estoque_msg, "(SEM ESTOQUE)");
-        }
+        if (p.quantidade == 0)
+            printf("%d | %s | R$%.2f | (SEM ESTOQUE)\n", p.id, p.nome, p.preco);
         else
-        {
-            sprintf(estoque_msg, "(%d unidades)", categoria[i].quantidade);
-        }
-
-        printf("ID: %d | %s - R$%.2f - %s\n",
-               categoria[i].id, categoria[i].nome,
-               categoria[i].preco, estoque_msg);
+            printf("%d | %s | R$%.2f | (%d unidades)\n", p.id, p.nome, p.preco, p.quantidade);
     }
+    fclose(arquivo);
 }
 
-// melhorias que precisa: exibir os produtos no estoque que pega diretamente do arquivo
 void comprarProduto(Produto categoria[], int quantidadeProdutos, float *total)
 {
     int idBuscado, quantidade;
@@ -271,10 +225,10 @@ void comprarProduto(Produto categoria[], int quantidadeProdutos, float *total)
             printf("Quantidade desejada: ");
             scanf("%d", &quantidade);
 
-            if (!verificarEstoque(categoria[i], quantidade))
-            {
-                return;
-            }
+            // if (!verificarEstoque(categoria[i], quantidade))
+            // {
+            //     return;
+            // }
 
             categoria[i].quantidade -= quantidade;
             float valorCompra = quantidade * categoria[i].preco;
@@ -286,7 +240,6 @@ void comprarProduto(Produto categoria[], int quantidadeProdutos, float *total)
     printf("Produto com ID %d não encontrado!\n", idBuscado);
 }
 
-// melhorias que precisa: vereficar
 int verificarEstoque(Produto p, int quantidade)
 {
     if (p.quantidade == 0)
@@ -302,7 +255,6 @@ int verificarEstoque(Produto p, int quantidade)
     return 1;
 }
 
-// melhorias que seria legais: deixar fazer mais de uma forma de pagamento
 void realizarPagamento(float totalLimpeza, float totalAlimentos, float totalPadaria)
 {
     float totalGeral = totalLimpeza + totalAlimentos + totalPadaria;
@@ -387,7 +339,6 @@ void realizarPagamento(float totalLimpeza, float totalAlimentos, float totalPada
     }
 }
 
-//
 void realizarSangria()
 {
     if (!caixaAberto)
@@ -456,7 +407,6 @@ void realizarSangria()
     printf("=================================\n");
 }
 
-// funcao suavee
 void fecharCaixa(float totalLimpeza, float totalAlimentos, float totalPadaria)
 {
     if (!caixaAberto)
@@ -479,7 +429,14 @@ void fecharCaixa(float totalLimpeza, float totalAlimentos, float totalPadaria)
     }
 }
 
-// melhorias que foi feita: foi implementado o submenu e arrumado erro de aceitar letras e while melhorado
+// ADD
+void exibirTodosProdutos()
+{
+    exibirProdutos(ARQUIVO_LIMPEZA, "Limpeza");
+    exibirProdutos(ARQUIVO_ALIMENTOS, "Alimentos");
+    exibirProdutos(ARQUIVO_PADARIA, "Padaria");
+}
+
 int main()
 {
     int opcao, categoriaCompra, opcaoSub, sair;
@@ -520,12 +477,10 @@ int main()
             switch (opcaoSub)
             {
             case 1:
-                cadastrarCategoria(&contadorLimpeza, &contadorAlimentos, &contadorPadaria);
+                cadastrarCategoria();
                 break;
             case 2:
-                exibirProdutos(limpeza, contadorLimpeza, "Material de Limpeza");
-                exibirProdutos(alimentos, contadorAlimentos, "Venda de Alimentos");
-                exibirProdutos(padaria, contadorPadaria, "Padaria");
+                exibirTodosProdutos();
                 break;
             case 3:
                 printf("\nEscolha a categoria:\n");
