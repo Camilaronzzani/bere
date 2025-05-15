@@ -39,32 +39,32 @@ void pega_hora_atual()
 
     printf("\n===========================================\n");
     if (hora >= 5 && hora < 12)
-        printf("Bom dia Dona Berê, Bem-vindo ao Mercadinho! ☀️\n");
+        printf("Bom dia Dona Berê, Bem-vindo ao Mercadinho! \n");
     else if (hora >= 12 && hora < 18)
-        printf("Boa tarde Dona Berê, Bem-vindo ao Mercadinho! 🌤️\n");
+        printf("Boa tarde Dona Berê, Bem-vindo ao Mercadinho! \n");
     else
-        printf("Boa noite Dona Berê, Bem-vindo ao Mercadinho! 🌙\n");
+        printf("Boa noite Dona Berê, Bem-vindo ao Mercadinho! \n");
 }
 
 void exibirMenu()
 {
     printf("\n============================================\n");
-    printf("           MENU MERCADINHO 🛍️              \n");
+    printf("           MENU MERCADINHO               \n");
     printf("============================================\n");
     if (caixaAberto == 0)
     {
-        printf("1. Abrir Caixa 💵\n");
-        printf("2. Sair 🚪\n");
+        printf("1. Abrir Caixa \n");
+        printf("2. Sair \n");
     }
     else
     {
-        printf("1. Cadastrar Produto 📝\n");
-        printf("2. Exibir Produtos 📦\n");
-        printf("3. Realizar Compra 🛒\n");
-        printf("4. Realizar Pagamento 💳\n");
-        printf("5. Realizar Sangria 💸\n");
-        printf("6. Fechar Caixa 🧾\n");
-        printf("7. Sair 🚪\n");
+        printf("1. Cadastrar Produto \n");
+        printf("2. Exibir Produtos \n");
+        printf("3. Realizar Compra \n");
+        printf("4. Realizar Pagamento \n");
+        printf("5. Realizar Sangria \n");
+        printf("6. Fechar Caixa \n");
+        printf("7. Sair \n");
     }
 
     printf("============================================\n");
@@ -87,7 +87,7 @@ void abrirCaixa()
             getchar();
             if (fundoDeCaixa <= 0)
             {
-                printf("Valor inválido! Digite um valor positivo.\n");
+                printf("Valor invalido! Digite um valor positivo.\n");
             }
         } while (fundoDeCaixa <= 0);
 
@@ -104,7 +104,7 @@ void cadastrarCategoria()
     {
         system("clear || cls");
         printf("\n===============================\n");
-        printf("      Cadastro de Produto\n");
+        printf("     Cadastro de Produto\n");
         printf("===============================");
         printf("\nEscolha a categoria do produto:\n");
         printf("1. Material de Limpeza\n");
@@ -114,7 +114,7 @@ void cadastrarCategoria()
         printf("Categoria: ");
         if (scanf("%d", &categoria) != 1)
         {
-            printf("Entrada inválida! Digite um número.\n");
+            printf("Entrada invalida! Digite um numero.\n");
             while (getchar() != '\n')
                 ;
             continue;
@@ -141,6 +141,8 @@ void cadastrarCategoria()
 
 void cadastrarProduto(Produto categoria[], int *contador, const char *nomeArquivo)
 {
+    int continuar = 0, cont = 0;
+
     if (*contador >= MAX_PRODUTOS)
     {
         printf("Limite de produtos atingido!\n");
@@ -149,47 +151,72 @@ void cadastrarProduto(Produto categoria[], int *contador, const char *nomeArquiv
 
     Produto p;
     p.id = idGlobal++;
-    printf("ID: %d \n", idGlobal);
-    getchar();
+    idGlobal++;
 
-    printf("Nome do produto: ");
-    fgets(p.nome, MAX_NOME, stdin);
-    p.nome[strcspn(p.nome, "\n")] = '\0';
-    if (strlen(p.nome) <= 2)
-    {
-        printf("Vazio\n");
-        return;
-    }
-
-    printf("Preço: R$");
-    while (scanf("%f", &p.preco) != 1 || p.preco <= 0)
-    {
-        printf("Invalido. Preco positivo: R$");
-        while (getchar() != '\n')
-            ;
-    }
-
-    printf("Quantidade: ");
-    while (scanf("%d", &p.quantidade) != 1 || p.quantidade < 0)
-    {
-        printf("Invalido. Quantidade positiva: ");
-        while (getchar() != '\n')
-            ;
-    }
-
-    categoria[*contador] = p;
-    (*contador)++;
-
-    FILE *arquivo = fopen(nomeArquivo, "a");
+    FILE *arquivo = fopen(nomeArquivo, "r");
     if (!arquivo)
     {
         perror("Erro ao abrir arquivo para salvar produto");
         return;
     }
-    fprintf(arquivo, "%d;%s;%.2f;%d\n", p.id, p.nome, p.preco, p.quantidade);
-    fclose(arquivo);
 
-    printf("\nProduto cadastrado com sucesso!");
+    while (fscanf(arquivo, "%d;%49[^;];%f;%d\n", &p.id, p.nome, &p.preco, &p.quantidade) == 4)
+    {
+        cont++;
+    }
+
+    do
+    {
+
+        getchar();
+
+        printf("Nome do produto: ");
+        fgets(p.nome, MAX_NOME, stdin);
+        p.nome[strcspn(p.nome, "\n")] = '\0';
+        if (strlen(p.nome) <= 2)
+        {
+            printf("Nome muito curto\n");
+            return;
+        }
+
+        printf("Preço: R$");
+        while (scanf("%f", &p.preco) != 1 || p.preco <= 0)
+        {
+            printf("Invalido. Preco positivo: R$");
+            while (getchar() != '\n')
+                ;
+        }
+
+        printf("Quantidade: ");
+        while (scanf("%d", &p.quantidade) != 1 || p.quantidade < 0)
+        {
+            printf("Invalido. Quantidade positiva: ");
+            while (getchar() != '\n')
+                ;
+        }
+
+        categoria[*contador] = p;
+        (*contador)++;
+
+        FILE *arquivo = fopen(nomeArquivo, "a");
+        if (!arquivo)
+        {
+            perror("Erro ao abrir arquivo para salvar produto");
+            return;
+        }
+        p.id = cont;
+        cont++;
+
+        fprintf(arquivo, "%d;%s;%.2f;%d\n", p.id, p.nome, p.preco, p.quantidade);
+        fclose(arquivo);
+
+        printf("\nProduto cadastrado com sucesso!");
+
+        printf("\nDeseja cadastrar outro produto? (Sim 1/Nao 0): ");
+        scanf(" %d", &continuar);
+        getchar();
+
+    } while (continuar == 1);
 }
 
 void exibirProdutos(const char *nomeArquivo, const char *titulo)
@@ -514,9 +541,16 @@ int main()
                 fecharCaixa(totalLimpeza, totalAlimentos, totalPadaria);
                 break;
             case 7:
-                system("clear || cls");
-                sair = 1;
-                printf("Saindo do sistema...\n Até Mais!\n");
+                if (caixaAberto == 1)
+                {
+                    printf("\nNao é possivel sair com o caixa aberto. feche o caixa antes de sair.\n");
+                }
+                else
+                {
+                    system("clear || cls");
+                    sair = 1;
+                    printf("Saindo do sistema...\n Até Mais!\n");
+                }
                 break;
             default:
                 system("clear || cls");
