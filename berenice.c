@@ -3,7 +3,6 @@
 #include <locale.h>
 #include <time.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 #define MAX_PRODUTOS 5
 #define MAX_NOME 50
@@ -25,8 +24,7 @@ Produto alimentos[MAX_PRODUTOS];
 Produto padaria[MAX_PRODUTOS];
 
 int caixaAberto = 0, idGlobal = 1, contadorLimpeza = 0, contadorAlimentos = 0, contadorPadaria = 0;
-float fundoDeCaixa = 0;
-float totalVendas = 0;
+float fundoDeCaixa = 0, totalVendas = 0;
 FILE *arquivo;
 
 void pega_hora_atual()
@@ -39,32 +37,32 @@ void pega_hora_atual()
 
     printf("\n===========================================\n");
     if (hora >= 5 && hora < 12)
-        printf("Bom dia Dona Berê, Bem-vindo ao Mercadinho! \n");
+        printf("Bom dia Dona Berê, Bem-vindo ao Mercadinho! ☀️\n");
     else if (hora >= 12 && hora < 18)
-        printf("Boa tarde Dona Berê, Bem-vindo ao Mercadinho! \n");
+        printf("Boa tarde Dona Berê, Bem-vindo ao Mercadinho! 🌤️\n");
     else
-        printf("Boa noite Dona Berê, Bem-vindo ao Mercadinho! \n");
+        printf("Boa noite Dona Berê, Bem-vindo ao Mercadinho! 🌙\n");
 }
 
 void exibirMenu()
 {
     printf("\n============================================\n");
-    printf("           MENU MERCADINHO               \n");
+    printf("           MENU MERCADINHO 🛍️              \n");
     printf("============================================\n");
     if (caixaAberto == 0)
     {
-        printf("1. Abrir Caixa \n");
-        printf("2. Sair \n");
+        printf("1. Abrir Caixa 💵\n");
+        printf("2. Sair 🚪\n");
     }
     else
     {
-        printf("1. Cadastrar Produto \n");
-        printf("2. Exibir Produtos \n");
-        printf("3. Realizar Compra \n");
-        printf("4. Realizar Pagamento \n");
-        printf("5. Realizar Sangria \n");
-        printf("6. Fechar Caixa \n");
-        printf("7. Sair \n");
+        printf("1. Cadastrar Produto 📝\n");
+        printf("2. Exibir Produtos 📦\n");
+        printf("3. Realizar Compra 🛒\n");
+        printf("4. Realizar Pagamento 💳\n");
+        printf("5. Realizar Sangria 💸\n");
+        printf("6. Fechar Caixa 🧾\n");
+        printf("7. Sair 🚪\n");
     }
 
     printf("============================================\n");
@@ -87,7 +85,7 @@ void abrirCaixa()
             getchar();
             if (fundoDeCaixa <= 0)
             {
-                printf("Valor invalido! Digite um valor positivo.\n");
+                printf("Valor inválido! Digite um valor positivo.\n");
             }
         } while (fundoDeCaixa <= 0);
 
@@ -104,7 +102,7 @@ void cadastrarCategoria()
     {
         system("clear || cls");
         printf("\n===============================\n");
-        printf("     Cadastro de Produto\n");
+        printf("      Cadastro de Produto\n");
         printf("===============================");
         printf("\nEscolha a categoria do produto:\n");
         printf("1. Material de Limpeza\n");
@@ -114,7 +112,7 @@ void cadastrarCategoria()
         printf("Categoria: ");
         if (scanf("%d", &categoria) != 1)
         {
-            printf("Entrada invalida! Digite um numero.\n");
+            printf("Entrada inválida! Digite um número.\n");
             while (getchar() != '\n')
                 ;
             continue;
@@ -167,7 +165,6 @@ void cadastrarProduto(Produto categoria[], int *contador, const char *nomeArquiv
 
     do
     {
-
         getchar();
 
         printf("Nome do produto: ");
@@ -239,47 +236,77 @@ void exibirProdutos(const char *nomeArquivo, const char *titulo)
     fclose(arquivo);
 }
 
-void comprarProduto(Produto categoria[], int quantidadeProdutos, float *total)
+void comprarProduto(Produto categoria[], int quantidadeProdutos, float *total, const char *nomeArquivo)
 {
+    FILE *arquivo = fopen(nomeArquivo, "r");
+    if (!arquivo)
+    {
+        perror("Erro ao abrir arquivo");
+        return;
+    }
     int idBuscado, quantidade;
     printf("\nDigite o ID do produto: ");
     scanf("%d", &idBuscado);
 
-    for (int i = 0; i < quantidadeProdutos; i++)
+    Produto p;
+    while (fscanf(arquivo, "%d;%49[^;];%f;%d\n", &p.id, p.nome, &p.preco, &p.quantidade) == 4)
     {
-        if (categoria[i].id == idBuscado)
+        if (p.id == idBuscado)
         {
-            printf("Quantidade desejada: ");
+            puts("Digite a quantidade solicitada:");
             scanf("%d", &quantidade);
+            if (quantidade <= p.quantidade)
+            {
+                printf("Produto: %s\n", p.nome);
+                printf("Preço: R$%.2f\n", p.preco);
+                printf("Quantidade solicitada: %d\n", quantidade);
+                printf("Valor total: R$%.2f\n", quantidade * p.preco);
+                *total += quantidade * p.preco;
+                p.quantidade -= quantidade;
 
-            // if (!verificarEstoque(categoria[i], quantidade))
-            // {
-            //     return;
-            // }
-
-            categoria[i].quantidade -= quantidade;
-            float valorCompra = quantidade * categoria[i].preco;
-            *total += valorCompra;
-            printf("Compra realizada! Total: R$%.2f\n", valorCompra);
+                FILE *arquivoTemp = fopen(nomeArquivo, "w");
+                if (!arquivoTemp)
+                {
+                    perror("Erro ao abrir arquivo temporário");
+                    fclose(arquivo);
+                    return;
+                }
+                fprintf(arquivoTemp, "%d;%s;%.2f;%d\n", p.id, p.nome, p.preco, p.quantidade);
+                fclose(arquivoTemp);
+            }
+            else
+            {
+                puts("Quantidade insuficiente");
+            }
+        }
+        else
+        {
+            ferror("ID não encontrado");
             return;
         }
     }
-    printf("Produto com ID %d não encontrado!\n", idBuscado);
-}
+    fclose(arquivo);
 
-int verificarEstoque(Produto p, int quantidade)
-{
-    if (p.quantidade == 0)
-    {
-        printf("Produto sem estoque!\n");
-        return 0;
-    }
-    if (p.quantidade < quantidade)
-    {
-        printf("Quantidade insuficiente em estoque!\n");
-        return 0;
-    }
-    return 1;
+    // for (int i = 0; i < quantidadeProdutos; i++)
+    // {
+    //     if (categoria[i].id == idBuscado)
+    //     {
+    //         printf("Quantidade desejada: ");
+    //         scanf("%d", &quantidade);
+
+    //         if (!verificarEstoque(categoria[i], quantidade))
+    //         {
+    //             return;
+    //         }
+
+    //         categoria[i].quantidade -= quantidade;
+    //         float valorCompra = quantidade * categoria[i].preco;
+    //         *total += valorCompra;
+    //         printf("Compra realizada! Total: R$%.2f\n", valorCompra);
+    //         return;
+    //     }
+    // }
+    // printf("Produto com ID %d não encontrado!\n", idBuscado);
 }
 
 void realizarPagamento(float totalLimpeza, float totalAlimentos, float totalPadaria)
@@ -427,7 +454,6 @@ void realizarSangria()
         totalVendas -= diferenca;
     }
 
-    // confirma a operaçao
     printf("\nSangria realizada com sucesso!\n");
     printf("Valor retirado: R$%.2f\n", valor);
     printf("Novo saldo disponível: R$%.2f\n", fundoDeCaixa + totalVendas);
@@ -456,7 +482,6 @@ void fecharCaixa(float totalLimpeza, float totalAlimentos, float totalPadaria)
     }
 }
 
-// ADD
 void exibirTodosProdutos()
 {
     exibirProdutos(ARQUIVO_LIMPEZA, "Limpeza");
@@ -481,12 +506,7 @@ int main()
         }
         if (opcao == 2)
         {
-            if (caixaAberto)
-            {
-                printf("Você deve fechar o caixa antes de sair!\n");
-                continue;
-            }
-            else
+            if (!caixaAberto)
             {
                 system("clear");
                 sair = 1;
@@ -510,6 +530,7 @@ int main()
                 exibirTodosProdutos();
                 break;
             case 3:
+                exibirTodosProdutos();
                 printf("\nEscolha a categoria:\n");
                 printf("1. Material de Limpeza\n");
                 printf("2. Venda de Alimentos\n");
@@ -519,13 +540,13 @@ int main()
                 switch (categoriaCompra)
                 {
                 case 1:
-                    comprarProduto(limpeza, contadorLimpeza, &totalLimpeza);
+                    comprarProduto(limpeza, contadorLimpeza, &totalLimpeza, ARQUIVO_LIMPEZA);
                     break;
                 case 2:
-                    comprarProduto(alimentos, contadorAlimentos, &totalAlimentos);
+                    comprarProduto(alimentos, contadorAlimentos, &totalAlimentos, ARQUIVO_ALIMENTOS);
                     break;
                 case 3:
-                    comprarProduto(padaria, contadorPadaria, &totalPadaria);
+                    comprarProduto(padaria, contadorPadaria, &totalPadaria, ARQUIVO_PADARIA);
                     break;
                 default:
                     printf("Categoria inválida!\n");
@@ -543,13 +564,11 @@ int main()
             case 7:
                 if (caixaAberto == 1)
                 {
-                    printf("\nNao é possivel sair com o caixa aberto. feche o caixa antes de sair.\n");
+                    printf("\nNão é possivel sair com o caixa aberto. feche o caixa antes de sair.\n");
                 }
                 else
                 {
-                    system("clear || cls");
                     sair = 1;
-                    printf("Saindo do sistema...\n Até Mais!\n");
                 }
                 break;
             default:
