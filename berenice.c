@@ -312,15 +312,13 @@ void pagamentoCartao(float totalGeral, float *totalLimpeza, float *totalAlimento
 
             if (trocarMetodo == 1)
             {
-                realizarPagamento(&totalLimpeza, &totalAlimentos, &totalPadaria);
-                return;
+                realizarPagamento(totalLimpeza, totalAlimentos, totalPadaria);
             }
         }
     } while (!confirmacao);
 
     totalVendas += totalGeral;
     printf("Pagamento no cartão confirmado.\n");
-    return totalVendas, totalGeral;
 }
 
 void realizarPagamento(float *totalLimpeza, float *totalAlimentos, float *totalPadaria)
@@ -380,7 +378,7 @@ void realizarPagamento(float *totalLimpeza, float *totalAlimentos, float *totalP
                 }
                 else if (escolha = 1)
                 {
-                    pagamentoCartao(totalGeral, &totalLimpeza, &totalAlimentos, &totalPadaria);
+                    pagamentoCartao(totalGeral, totalLimpeza, totalAlimentos, totalPadaria);
                 }
                 else
                 {
@@ -398,7 +396,7 @@ void realizarPagamento(float *totalLimpeza, float *totalAlimentos, float *totalP
         }
         else if (metodo == 2)
         {
-            pagamentoCartao(totalGeral, &totalLimpeza, &totalAlimentos, &totalPadaria);
+            pagamentoCartao(totalGeral, totalLimpeza, totalAlimentos, totalPadaria);
         }
         else
         {
