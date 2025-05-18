@@ -6,9 +6,9 @@
 #include <windows.h>
 
 #define MAX_PRODUTOS 5
-#define MAX_NOME 50
+#define MAX_NOME 50 // Tamanho máximo do nome de um produto
 #define ARQUIVO_LIMPEZA "limpeza.txt"
-#define ARQUIVO_ALIMENTOS "alimentos.txt"
+#define ARQUIVO_ALIMENTOS "alimentos.txt" //Destinatário de arquivo
 #define ARQUIVO_PADARIA "padaria.txt"
 
 typedef struct
@@ -18,7 +18,7 @@ typedef struct
     float preco;
     int quantidade;
 } Produto;
-
+//Declaração de arrays de produtos para cada categoria Produto
 Produto limpeza[MAX_PRODUTOS];
 Produto alimentos[MAX_PRODUTOS];
 Produto padaria[MAX_PRODUTOS];
@@ -26,7 +26,7 @@ Produto padaria[MAX_PRODUTOS];
 int caixaAberto = 0, idGlobal = 1, contadorLimpeza = 0, contadorAlimentos = 0, contadorPadaria = 0;
 float fundoDeCaixa = 0, totalVendas = 0;
 FILE *arquivo;
-
+// Função para exibir uma saudação com base na hora do sistema void
 void pega_hora_atual()
 {
     time_t agora;
@@ -43,7 +43,7 @@ void pega_hora_atual()
     else
         printf("Boa noite Dona Bere, Bem-vindo ao Mercadinho! \n");
 }
-
+// Mostra o menu principal
 void exibirMenu()
 {
     printf("\n============================================\n");
@@ -68,7 +68,7 @@ void exibirMenu()
     printf("============================================\n");
     printf("Escolha uma opcao: ");
 }
-
+// Inicia o caixa contando com o valor de saldo inicial 
 void abrirCaixa()
 {
     if (caixaAberto)
@@ -94,7 +94,7 @@ void abrirCaixa()
         printf("Caixa aberto com sucesso!\n");
     }
 }
-
+// Menu para escolher categoria ao cadastrar produtos 
 void cadastrarCategoria()
 {
     int categoria, continuar;
@@ -136,6 +136,7 @@ void cadastrarCategoria()
         }
     } while (categoria != 4);
 }
+//Registro de Log 
 void escrever_Log(const char *mensagem, ...) {
     time_t agora = time(NULL);
     struct tm *tempo = localtime(&agora);
@@ -160,7 +161,7 @@ void escrever_Log(const char *mensagem, ...) {
     fprintf(arquivo, "\n");
     fclose(arquivo);
 }
-
+// Cadastra um novo produto em uma das categorias 
 void cadastrarProduto(Produto categoria[], int *contador, const char *nomeArquivo)
 {
     int continuar = 0, cont = 0;
@@ -249,7 +250,7 @@ void cadastrarProduto(Produto categoria[], int *contador, const char *nomeArquiv
     } while (continuar == 1);
 
 }
-
+// Exibe os produtos de uma categoria
 void exibirProdutos(const char *nomeArquivo, const char *titulo)
 {
     FILE *arquivo = fopen(nomeArquivo, "r");
@@ -269,7 +270,7 @@ void exibirProdutos(const char *nomeArquivo, const char *titulo)
     }
     fclose(arquivo);
 }
-
+// Realiza a compra de um produto
 void comprarProduto(Produto categoria[], int quantidadeProdutos, float *total, const char *nomeArquivo)
 {
     FILE *arquivo = fopen(nomeArquivo, "r");
@@ -322,7 +323,7 @@ void comprarProduto(Produto categoria[], int quantidadeProdutos, float *total, c
     }
     fclose(arquivo);
 }
-
+//Função de pagamento em cartão
 void pagamentoCartao(float totalGeral, float *totalLimpeza, float *totalAlimentos, float *totalPadaria)
 {
     int confirmacao, trocarMetodo;
@@ -347,7 +348,7 @@ void pagamentoCartao(float totalGeral, float *totalLimpeza, float *totalAlimento
     totalVendas += totalGeral;
     printf("Pagamento no cartao confirmado.\n");
 }
-
+//Função Pagamento em Dinheiro
 void realizarPagamento(float *totalLimpeza, float *totalAlimentos, float *totalPadaria)
 {
     int metodo, escolha;
@@ -439,7 +440,7 @@ void realizarPagamento(float *totalLimpeza, float *totalAlimentos, float *totalP
     }
     escrever_Log("Venda realizada - Forma de pagamento %d, Valor: %.2f, troco: %.2f", metodo, totalGeral, troco);
 }
-
+//Função Sangria
 void realizarSangria()
 {
     if (!caixaAberto)
@@ -506,7 +507,7 @@ void realizarSangria()
     printf("Novo saldo disponivel: R$%.2f\n", fundoDeCaixa + totalVendas);
     printf("=================================\n");
 }
-
+// Exibe o fechamento do caixa e os resultados do dia
 void fecharCaixa(float totalLimpeza, float totalAlimentos, float totalPadaria)
 {
     if (!caixaAberto)
@@ -528,14 +529,14 @@ void fecharCaixa(float totalLimpeza, float totalAlimentos, float totalPadaria)
         printf("\nTotal em caixa (abertura + vendas): R$%.2f\n", fundoDeCaixa + totalVendas);
     }
 }
-
+// Exibe os produtos de Todas as Categorias
 void exibirTodosProdutos()
 {
     exibirProdutos(ARQUIVO_LIMPEZA, "Limpeza");
     exibirProdutos(ARQUIVO_ALIMENTOS, "Alimentos");
     exibirProdutos(ARQUIVO_PADARIA, "Padaria");
 }
-
+// Função principal do sistema
 int main()
 {
     int opcao, categoriaCompra, opcaoSub, sair;
